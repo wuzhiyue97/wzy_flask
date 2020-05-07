@@ -1,36 +1,35 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from redis import StrictRedis
-from flask_wtf.csrf import CSRFProtect
+from flask import current_app
+from flask_script import Manager
+from flask_migrate import Migrate, MigrateCommand
+from info import create_app, db, redis_store
 import pymysql
+import logging
 pymysql.install_as_MySQLdb()
-# 0.自定义项目配置类
-class Config(object):
-    # 开启debug模式
-    DEBUG = True
-    # mysql 数据库相关配置
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:12345678@192.168.171.181:3306/wzy_flask'
-    # 关闭数据库修改跟着操作
-    SQLALCHEMY_TRACK_MODIFICATIONS=False
-    # redis 数据库配置
-    REDIS_HOST = '127.0.0.1'
-    REDIS_PORT = 6379
-# 1.创建app对象
-app = Flask(__name__)
-app.config.from_object(Config)
-# 2.创建mysql数据库对象
-db = SQLAlchemy(app)
-# 3.创建redis数据库对象
-# decode_response =True : 能将bytes类型数据转换成字符串
-redis_store = StrictRedis(host=Config.REDIS_HOST,port=Config.REDIS_PORT,decode_responses=True)
-# 4.添加CSRF验证
-# 提取cookie中的csrf_token的值
-# 提起form表单或者ajax请求头中携带的csrf_token值
-# 自动对比这俩个值是否一致
-CSRFProtect(app)
+
+# 调用工厂方法创建app对象
+app = create_app('development')
+# 6.给项目添加迁移文件
+Migrate(app, db)
+# 7.创建管理对象
+manager = Manager(app)
+# 8.根据管理对象添加迁移命令
+manager.add_command('db', MigrateCommand)
+
+
 @app.route('/index')
 def index():
-    return 'index'
-if __name__ == '__main__':
 
-    app.run(debug=True)
+    logging.debug("This is a debug log.")
+    logging.info("This is a info log.")
+    logging.warning("This is a warning log.")
+    logging.error("This is a error log.")
+    logging.critical("This is a critical log.")
+
+    # flask中也封装了logging模块
+    current_app.logger.debug('flask -- debug')
+    return 'index'
+
+
+if __name__ == '__main__':
+    # 9.使用管理对象运行项目
+    manager.run()
