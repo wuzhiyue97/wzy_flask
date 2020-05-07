@@ -9,6 +9,7 @@ from config import config_dict
 import logging
 from logging.handlers import RotatingFileHandler
 
+
 # 当app对象不存在的时候,并没有真正做数据库初始化操作
 db = SQLAlchemy()
 # redis数据库对象
@@ -58,4 +59,8 @@ def create_app(config_name):
     CSRFProtect(app)
     # 5.将flask.session的存储位置从服务器'内存'调整到'redis'数据库
     Session(app)
+    # 6.注册蓝图对象
+    # 延迟导入,解决循环导包问题
+    from info.moduls.index import index_bp
+    app.register_blueprint(index_bp)
     return app
